@@ -1,0 +1,1371 @@
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { 
+  Layers, Home, Package, Tag, BarChart3, Users, 
+  FileText, Repeat, CreditCard, X, Menu, Search, Bell,
+  CheckCircle, AlertCircle, Clock, Plus, Headphones, TrendingUp, 
+  TrendingDown, PlaySquare, MonitorPlay, Tv, Moon, Sun, 
+  MoreVertical, Download, ShieldCheck, Trash2
+} from 'lucide-react';
+
+/* -------------------------------------------------------------------------- */
+/*                               GLOBAL CONTEXT                               */
+/* -------------------------------------------------------------------------- */
+
+const AppContext = createContext();
+
+const initialData = {
+  customers: [
+    { id: 'CUST-101', name: 'Ravi Kumar', email: 'customer@brightloop.in', joined: '12 Jan 2026', status: 'Active' },
+    { id: 'CUST-102', name: 'Priya Sharma', email: 'priya.s@example.com', joined: '15 Feb 2026', status: 'Active' },
+    { id: 'CUST-103', name: 'Amit Patel', email: 'amit.p@example.com', joined: '03 Mar 2026', status: 'Inactive' },
+  ],
+  products: [
+    { id: 'P1', name: 'Netflix', variants: 3, activePlans: 4, basePrice: '₹199' },
+    { id: 'P2', name: 'Amazon Prime', variants: 2, activePlans: 2, basePrice: '₹299' },
+    { id: 'P3', name: 'Jio Hotstar', variants: 3, activePlans: 3, basePrice: '₹149' },
+    { id: 'P4', name: 'Spotify', variants: 4, activePlans: 4, basePrice: '₹119' },
+    { id: 'P5', name: 'Apple One', variants: 2, activePlans: 2, basePrice: '₹365' },
+    { id: 'P6', name: 'YouTube Premium', variants: 2, activePlans: 2, basePrice: '₹129' },
+  ],
+  plans: [
+    { id: 'PL1', name: 'Netflix Premium (4K)', product: 'Netflix', cycle: 'Monthly', price: '₹649', active: 1420 },
+    { id: 'PL2', name: 'Amazon Prime Yearly', product: 'Amazon Prime', cycle: 'Yearly', price: '₹1499', active: 3840 },
+    { id: 'PL3', name: 'Jio Hotstar Super', product: 'Jio Hotstar', cycle: 'Yearly', price: '₹899', active: 2150 },
+  ],
+  staff: [
+    { id: 'S1', name: 'Arun Singh', role: 'Support Lead', status: 'Online' },
+    { id: 'S2', name: 'Megha Gupta', role: 'Billing Specialist', status: 'Online' },
+    { id: 'S3', name: 'Rahul Dev', role: 'Support Agent', status: 'Offline' },
+    { id: 'S4', name: 'Kiran Rao', role: 'Account Manager', status: 'Online' },
+  ],
+  users: [
+    { email: 'admin@brightloop.in', pass: 'Admin@123', role: 'Admin', name: 'System Admin' },
+    { email: 'staff@brightloop.in', pass: 'Staff@123', role: 'Staff', name: 'Support Staff' },
+    { email: 'customer@brightloop.in', pass: 'Customer@123', role: 'Customer', name: 'Ravi Kumar' },
+  ],
+  subscriptions: [
+    { id: 'SUB-9821', userEmail: 'customer@brightloop.in', planName: 'Netflix Premium (4K)', cycle: 'Monthly', price: 649, status: 'Active', nextBilling: '01 Nov 2026', method: 'UPI', purchasedAt: '01 Oct 2026' }
+  ],
+  payments: [
+    { id: 'INV-2026-1042', userEmail: 'customer@brightloop.in', date: '01 Oct 2026', desc: 'Netflix Premium (4K) - Monthly', amount: '₹649', status: 'Successful', method: 'UPI' }
+  ],
+  notifications: [
+    { id: 1, role: 'Staff', title: 'System', msg: 'System initialized.', time: 'Just now' }
+  ],
+  discounts: [
+    { id: 'D1', name: 'FESTIVE50', type: 'Percentage', value: '50%', status: 'Active' }
+  ]
+};
+
+function AppProvider({ children }) {
+  const [state, setState] = useState(initialData);
+  const [toast, setToast] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (darkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [darkMode]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const addCustomer = (customer) => {
+    setState(prev => ({ ...prev, customers: [...prev.customers, { ...customer, id: `CUST-${Math.floor(Math.random()*1000)+200}` }] }));
+    showToast('Customer added successfully');
+  };
+
+  const removeCustomer = (id) => {
+    setState(prev => ({ ...prev, customers: prev.customers.filter(c => c.id !== id) }));
+    showToast('Customer removed', 'error');
+  };
+
+  const addProduct = (product) => {
+    setState(prev => ({ ...prev, products: [...prev.products, { ...product, id: `P${Date.now()}` }] }));
+    showToast('Product added successfully');
+  };
+
+  const addPlan = (plan) => {
+    setState(prev => ({ ...prev, plans: [...prev.plans, { ...plan, id: `PL${Date.now()}` }] }));
+    showToast('Plan added successfully');
+  };
+
+  const registerUser = (name, email, password) => {
+    setState(prev => ({
+      ...prev, 
+      users: [...prev.users, { email, pass: password, role: 'Customer', name }],
+      customers: [...prev.customers, { id: `CUST-${Math.floor(Math.random()*1000)+200}`, name, email, joined: new Date().toLocaleDateString('en-GB'), status: 'Active' }]
+    }));
+    showToast('Account created! Please log in.');
+  };
+
+  const addNotification = (role, title, msg, userEmail = null) => {
+    setState(prev => ({ ...prev, notifications: [{ id: Date.now(), role, title, msg, userEmail, time: 'Just now' }, ...prev.notifications] }));
+  };
+
+  const processPurchase = (app, userEmail) => {
+    const newSub = {
+        id: `SUB-${Math.floor(Math.random()*10000)}`,
+        userEmail,
+        planName: app.name,
+        cycle: 'Monthly',
+        price: parseInt(app.price.replace(/\D/g, '')),
+        status: 'Active',
+        nextBilling: '01 Dec 2026',
+        method: 'Card',
+        purchasedAt: new Date().toLocaleDateString('en-GB')
+    };
+    const newPayment = {
+        id: `INV-2026-${Math.floor(Math.random()*10000)}`,
+        userEmail,
+        date: new Date().toLocaleDateString('en-GB'),
+        desc: `${app.name} - New Subscription`,
+        amount: app.price,
+        status: 'Successful',
+        method: 'Card'
+    };
+    setState(prev => ({
+        ...prev,
+        subscriptions: [newSub, ...prev.subscriptions],
+        payments: [newPayment, ...prev.payments]
+    }));
+    showToast('Payment successful!');
+    addNotification('Staff', 'New Purchase', `User ${userEmail} bought ${app.name}`);
+    addNotification('Customer', 'Subscription Activated', `${app.name} is now active.`, userEmail);
+  };
+
+  return (
+    <AppContext.Provider value={{ state, setState, darkMode, setDarkMode, addCustomer, removeCustomer, addProduct, addPlan, registerUser, showToast, searchQuery, setSearchQuery, processPurchase, addNotification }}>
+      {children}
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-[100] flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white animate-in slide-in-from-bottom-5 ${toast.type === 'error' ? 'bg-red-600' : 'bg-slate-900 dark:bg-blue-600'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+          <p className="text-sm font-medium">{toast.message}</p>
+        </div>
+      )}
+    </AppContext.Provider>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                MAIN APP                                    */
+/* -------------------------------------------------------------------------- */
+
+export default function App() {
+  return (
+    <AppProvider>
+      <MainLayout />
+    </AppProvider>
+  );
+}
+
+function MainLayout() {
+  const { state, darkMode, setDarkMode, showToast, searchQuery, setSearchQuery } = useContext(AppContext);
+  const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleLoginSuccess = (name, role) => {
+    setLoading(true);
+    setTimeout(() => {
+      setUserProfile({ id: '123', name, role });
+      setCurrentView(role === 'Staff' ? 'customers' : 'dashboard');
+      setLoading(false);
+    }, 800);
+  };
+
+  const handleLogout = () => {
+    setUserProfile(null);
+    setCurrentView('dashboard');
+    showToast('Logged out successfully');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden font-sans text-slate-900 dark:text-slate-50 transition-colors">
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 dark:bg-slate-950 text-slate-300 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center justify-between h-16 px-6 bg-slate-950 shrink-0 border-b border-slate-800">
+          <div className="flex items-center gap-2 text-white font-bold text-lg tracking-tight">
+            <Layers className="h-6 w-6 text-blue-500" />
+            Brightloop
+          </div>
+          <button className="lg:hidden text-slate-400 hover:text-white" onClick={() => setSidebarOpen(false)}>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="px-4 py-6 space-y-1 overflow-y-auto flex-1 custom-scrollbar">
+          {userProfile.role === 'Admin' && (
+            <>
+              <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-4 first:mt-0">Admin Control</p>
+              <NavItem icon={Home} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setSidebarOpen(false);}} />
+              <NavItem icon={Package} label="Products & Plans" isActive={currentView === 'products'} onClick={() => {setCurrentView('products'); setSidebarOpen(false);}} />
+              <NavItem icon={Tag} label="Discounts" isActive={currentView === 'discounts'} onClick={() => {setCurrentView('discounts'); setSidebarOpen(false);}} />
+              <NavItem icon={BarChart3} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setSidebarOpen(false);}} />
+              <NavItem icon={ShieldCheck} label="User Management" isActive={currentView === 'users'} onClick={() => {setCurrentView('users'); setSidebarOpen(false);}} />
+            </>
+          )}
+          {userProfile.role === 'Staff' && (
+            <>
+              <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-4 first:mt-0">Operations</p>
+              <NavItem icon={Users} label="Customers" isActive={currentView === 'customers' || currentView === 'dashboard'} onClick={() => {setCurrentView('customers'); setSidebarOpen(false);}} />
+              <NavItem icon={FileText} label="Quotations" isActive={currentView === 'quotations'} onClick={() => {setCurrentView('quotations'); setSidebarOpen(false);}} />
+              <NavItem icon={Repeat} label="Subscriptions" isActive={currentView === 'subscriptions'} onClick={() => {setCurrentView('subscriptions'); setSidebarOpen(false);}} />
+              <NavItem icon={FileText} label="Invoices" isActive={currentView === 'invoices'} onClick={() => {setCurrentView('invoices'); setSidebarOpen(false);}} />
+              <NavItem icon={CreditCard} label="Payments" isActive={currentView === 'payments'} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />
+            </>
+          )}
+          {userProfile.role === 'Customer' && (
+            <>
+              <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-4 first:mt-0">My Portal</p>
+              <NavItem icon={Home} label="Overview" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setSidebarOpen(false);}} />
+              <NavItem icon={Repeat} label="My Subscriptions" isActive={currentView === 'subscriptions'} onClick={() => {setCurrentView('subscriptions'); setSidebarOpen(false);}} />
+              <NavItem icon={CreditCard} label="Payment History" isActive={currentView === 'payments'} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />
+              <NavItem icon={Headphones} label="Support" isActive={currentView === 'support'} onClick={() => {setCurrentView('support'); setSidebarOpen(false);}} />
+            </>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Header */}
+        <header className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 transition-colors">
+          <div className="flex items-center">
+            <button className="lg:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 mr-4" onClick={() => setSidebarOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="relative hidden sm:block text-slate-500">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 dark:text-white transition-colors w-64"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            
+            <button onClick={() => setDarkMode(!darkMode)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+
+            <div className="relative">
+              <button onClick={() => setShowNotifications(!showNotifications)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-semibold text-sm">Notifications</div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {state.notifications.filter(n => n.role === userProfile.role && (!n.userEmail || n.userEmail === userProfile.email)).length === 0 ? (
+                       <div className="p-4 text-center text-sm text-slate-500">No new notifications</div>
+                    ) : state.notifications.filter(n => n.role === userProfile.role && (!n.userEmail || n.userEmail === userProfile.email)).map((notif, idx) => (
+                      <div key={idx} className="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{notif.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{notif.msg}</p>
+                        <p className="text-[10px] text-slate-400 mt-2">{notif.time}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+            
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-none mb-1">{userProfile.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-none">{userProfile.role}</p>
+              </div>
+              <div 
+                className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" 
+                title="Logout" 
+                onClick={handleLogout}
+              >
+                {userProfile.name.charAt(0).toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative">
+          {userProfile.role === 'Admin' && (
+            <>
+              {currentView === 'dashboard' && <AdminDashboardView />}
+              {currentView === 'products' && <AdminProductsView />}
+              {currentView === 'discounts' && <AdminDiscountsView />}
+              {currentView === 'reports' && <AdminReportsView />}
+              {currentView === 'users' && <AdminUsersView />}
+            </>
+          )}
+          {userProfile.role === 'Staff' && (
+            <>
+              {currentView === 'customers' && <StaffCustomersView />}
+              {currentView === 'quotations' && <PlaceholderView title="Quotations" desc="Manage active quotes and proposals." icon={FileText} />}
+              {currentView === 'subscriptions' && <PlaceholderView title="Subscriptions" desc="View all managed subscriptions." icon={Repeat} />}
+              {currentView === 'invoices' && <PlaceholderView title="Invoices" desc="Track billing and due invoices." icon={FileText} />}
+              {currentView === 'payments' && <PlaceholderView title="Payments" desc="Record incoming manual or automated payments." icon={CreditCard} />}
+            </>
+          )}
+          {userProfile.role === 'Customer' && (
+            <>
+              {currentView === 'dashboard' && <CustomerDashboardView profile={userProfile} />}
+              {currentView === 'subscriptions' && <CustomerSubscriptionsView />}
+              {currentView === 'payments' && <CustomerPaymentsView />}
+              {currentView === 'support' && <CustomerSupportView />}
+            </>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function NavItem({ icon: Icon, label, isActive, onClick }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+        isActive 
+          ? 'bg-blue-600 text-white shadow-md' 
+          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+      }`}
+    >
+      <Icon className="h-5 w-5" />
+      {label}
+    </button>
+  );
+}
+
+function PlaceholderView({ title, desc, icon: Icon }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-96 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/50 p-8 transition-colors">
+      <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-full flex items-center justify-center mb-4">
+        <Icon className="h-8 w-8" />
+      </div>
+      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{title}</h2>
+      <p className="text-slate-500 dark:text-slate-400 max-w-md">{desc}</p>
+    </div>
+  );
+}
+
+function Modal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-700 animate-in zoom-in-95">
+        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <h3 className="font-bold text-lg dark:text-white">{title}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><X className="w-5 h-5"/></button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                AUTH SCREEN                                 */
+/* -------------------------------------------------------------------------- */
+
+function AuthScreen({ onLoginSuccess }) {
+  const { state, registerUser, showToast } = useContext(AppContext);
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (isLogin) {
+      const user = state.users.find(u => u.email === email && u.pass === password);
+      if (user) {
+        onLoginSuccess(user.name, user.role);
+      } else {
+        setError('Invalid credentials. Please check your email and password.');
+      }
+    } else {
+      if(password.length < 8) {
+        setError('Password must be at least 8 characters');
+        return;
+      }
+      registerUser(name, email, password);
+      setIsLogin(true); // Switch to login view
+      setPassword('');
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+        
+        {/* Tabs */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800">
+          <button onClick={() => {setIsLogin(true); setError('');}} className={`flex-1 py-4 text-sm font-bold text-center ${isLogin ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/20' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>Sign In</button>
+          <button onClick={() => {setIsLogin(false); setError('');}} className={`flex-1 py-4 text-sm font-bold text-center ${!isLogin ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/20' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>Create Account</button>
+        </div>
+
+        <div className="p-8">
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-2xl tracking-tight">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                 <Layers className="h-5 w-5 text-white" />
+              </div>
+              Brightloop
+            </div>
+          </div>
+          
+          <h2 className="text-xl font-bold text-center text-slate-800 dark:text-slate-100 mb-2">
+            {isLogin ? 'Welcome back' : 'Join Brightloop'}
+          </h2>
+          <p className="text-center text-slate-500 dark:text-slate-400 mb-6 text-sm">
+            {isLogin ? 'Sign in to manage your subscriptions.' : 'Create an account to track your plans.'}
+          </p>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                  placeholder="John Doe" 
+                />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                placeholder="name@company.com" 
+              />
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+              </div>
+              <input 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                placeholder="••••••••" 
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm mt-4"
+            >
+              {isLogin ? 'Sign In' : 'Create Account'}
+            </button>
+          </form>
+
+          {isLogin && (
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              <p className="font-semibold mb-2 text-slate-800 dark:text-slate-200">Demo Credentials:</p>
+              <ul className="space-y-1">
+                <li>Admin: <span className="font-mono text-blue-600 dark:text-blue-400">admin@brightloop.in</span> / Admin@123</li>
+                <li>Staff: <span className="font-mono text-blue-600 dark:text-blue-400">staff@brightloop.in</span> / Staff@123</li>
+                <li>Customer: <span className="font-mono text-blue-600 dark:text-blue-400">customer@brightloop.in</span> / Customer@123</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              ADMIN VIEWS                                   */
+/* -------------------------------------------------------------------------- */
+
+function AdminDashboardView() {
+  const { state } = useContext(AppContext);
+  const [selectedMetric, setSelectedMetric] = useState(null);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+
+  const metrics = [
+    { label: "Today's Transactions", value: '₹45,200', trend: '+12.5%', isUp: true, detail: '145 successful payments via UPI, 12 via Cards.' },
+    { label: "This Week", value: '₹3,84,500', trend: '+8.2%', isUp: true, detail: 'Weekly target achieved. High renewals on Netflix products.' },
+    { label: "This Month", value: '₹14,42,300', trend: '-2.1%', isUp: false, detail: 'Slight dip compared to last month due to festive season pause.' },
+    { label: "This Year", value: '₹1,58,20,000', trend: '+24.5%', isUp: true, detail: 'Consistent YoY growth driven by new SaaS integrations.' },
+  ];
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-slate-500 dark:text-slate-400">Financial overview and system health.</p>
+        </div>
+        
+        <button 
+          onClick={() => setShowStaffModal(true)}
+          className="flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow transition-all text-left"
+        >
+          <div className="flex -space-x-2">
+            {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 border-2 border-white dark:border-slate-800 flex items-center justify-center text-xs font-bold text-blue-700 dark:text-blue-300">S{i}</div>)}
+          </div>
+          <div className="text-sm">
+            <span className="font-bold text-slate-800 dark:text-slate-200">{state.staff.length} Total Staff</span>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>{state.staff.filter(s=>s.status==='Online').length} Online now</p>
+          </div>
+        </button>
+      </div>
+      
+      {/* Time-based Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics.map((stat, i) => (
+          <div 
+            key={i} 
+            onClick={() => setSelectedMetric(stat)}
+            className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col cursor-pointer hover:border-blue-300 transition-colors"
+          >
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{stat.label}</span>
+            <div className="flex items-end justify-between mt-1">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</span>
+              <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${stat.isUp ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                {stat.isUp ? <TrendingUp className="w-3 h-3 mr-1"/> : <TrendingDown className="w-3 h-3 mr-1"/>}
+                {stat.trend}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-6 flex flex-col h-96">
+           <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-4">Historical Revenue (Last 6 Months)</h3>
+           <div className="flex-1 flex items-end justify-between gap-2 pt-4 border-b border-l border-slate-200 dark:border-slate-700 pb-2 pl-2 relative">
+             {[40, 65, 45, 80, 55, 90].map((h, i) => (
+               <div key={i} className="w-full flex flex-col items-center justify-end h-full group relative cursor-pointer" onClick={() => setSelectedMetric({label: `Month ${i+1}`, value: `₹${(h * 15000).toLocaleString()}`, detail: 'Monthly detailed breakdown not loaded yet.'})}>
+                 <div className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all duration-300 hover:bg-blue-600 dark:hover:bg-blue-500" style={{ height: `${h}%` }}>
+                   <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-slate-700 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 transition-opacity">
+                     ₹{(h * 15000).toLocaleString()}
+                   </div>
+                 </div>
+                 <span className="text-xs text-slate-500 dark:text-slate-400 mt-2">M{i+1}</span>
+               </div>
+             ))}
+           </div>
+        </div>
+        
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-6 flex flex-col h-96">
+           <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-4">System Alerts</h3>
+           <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg">
+               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-semibold text-sm mb-1">
+                 <AlertCircle className="w-4 h-4"/> Payment Gateway Latency
+               </div>
+               <p className="text-xs text-amber-700 dark:text-amber-500">UPI processing is experiencing a 5-second delay.</p>
+             </div>
+             <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg">
+               <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-semibold text-sm mb-1">
+                 <CheckCircle className="w-4 h-4"/> Batch Renewal Success
+               </div>
+               <p className="text-xs text-emerald-700 dark:text-emerald-500">4,120 subscriptions successfully renewed today.</p>
+             </div>
+           </div>
+        </div>
+      </div>
+
+      {/* Metric Detail Modal */}
+      <Modal isOpen={!!selectedMetric} onClose={() => setSelectedMetric(null)} title="Metric Details">
+         {selectedMetric && (
+           <div>
+             <h4 className="text-xl font-bold dark:text-white mb-2">{selectedMetric.label}</h4>
+             <p className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-4">{selectedMetric.value}</p>
+             <p className="text-slate-600 dark:text-slate-300">{selectedMetric.detail}</p>
+           </div>
+         )}
+      </Modal>
+
+      {/* Staff Modal */}
+      <Modal isOpen={showStaffModal} onClose={() => setShowStaffModal(false)} title="Staff Directory">
+        <div className="space-y-3">
+          {state.staff.map((s) => (
+            <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+              <div>
+                <p className="font-bold text-slate-800 dark:text-slate-200">{s.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{s.role}</p>
+              </div>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${s.status === 'Online' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                {s.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function AdminProductsView() {
+  const { state, addProduct, addPlan } = useContext(AppContext);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', variants: 1, basePrice: '' });
+  const [newPlan, setNewPlan] = useState({ name: '', product: '', cycle: 'Monthly', price: '' });
+
+  const handleAddProduct = (e) => {
+    e.preventDefault();
+    addProduct({ ...newProduct, activePlans: 0 });
+    setShowProductModal(false);
+    setNewProduct({ name: '', variants: 1, basePrice: '' });
+  };
+
+  const handleAddPlan = (e) => {
+    e.preventDefault();
+    addPlan({ ...newPlan, active: 0 });
+    setShowPlanModal(false);
+    setNewPlan({ name: '', product: '', cycle: 'Monthly', price: '' });
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Products & Plans</h1>
+        <p className="text-slate-500 dark:text-slate-400">Manage available products, variants, and subscription configurations.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Products Table */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200">Products Catalog</h3>
+            <button onClick={() => setShowProductModal(true)} className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:underline"><Plus className="w-4 h-4 mr-1"/>Add</button>
+          </div>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Product</th>
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Variants</th>
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Base Price</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {state.products.map((p, i) => (
+                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <td className="py-3 px-4 font-medium text-sm dark:text-slate-200">{p.name}</td>
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{p.variants}</td>
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{p.basePrice}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Plans Table */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200">Subscription Plans</h3>
+            <button onClick={() => setShowPlanModal(true)} className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:underline"><Plus className="w-4 h-4 mr-1"/>Add</button>
+          </div>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Plan Name</th>
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Cycle</th>
+                <th className="py-2 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Price</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {state.plans.map((p, i) => (
+                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <td className="py-3 px-4 font-medium text-sm text-blue-700 dark:text-blue-400">{p.name}</td>
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{p.cycle}</td>
+                  <td className="py-3 px-4 text-sm font-semibold dark:text-slate-200">{p.price}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <Modal isOpen={showProductModal} onClose={() => setShowProductModal(false)} title="Add Product">
+        <form onSubmit={handleAddProduct} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Product Name</label>
+            <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} placeholder="e.g. Disney+" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Base Price</label>
+            <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newProduct.basePrice} onChange={e=>setNewProduct({...newProduct, basePrice: e.target.value})} placeholder="e.g. ₹299" />
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Product</button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showPlanModal} onClose={() => setShowPlanModal(false)} title="Add Plan">
+        <form onSubmit={handleAddPlan} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Plan Name</label>
+            <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newPlan.name} onChange={e=>setNewPlan({...newPlan, name: e.target.value})} placeholder="e.g. Disney+ Premium" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium dark:text-slate-300 mb-1">Cycle</label>
+              <select className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newPlan.cycle} onChange={e=>setNewPlan({...newPlan, cycle: e.target.value})}>
+                <option>Monthly</option>
+                <option>Yearly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium dark:text-slate-300 mb-1">Price</label>
+              <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newPlan.price} onChange={e=>setNewPlan({...newPlan, price: e.target.value})} placeholder="₹" />
+            </div>
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Plan</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+function AdminDiscountsView() {
+  const { state, setState, showToast } = useContext(AppContext);
+  const [showModal, setShowModal] = useState(false);
+  const [newDiscount, setNewDiscount] = useState({ name: '', type: 'Percentage', value: '' });
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    setState(prev => ({
+      ...prev,
+      discounts: [...prev.discounts, { ...newDiscount, id: `D${Date.now()}`, status: 'Active' }]
+    }));
+    setShowModal(false);
+    showToast('Discount added successfully');
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Discount Management</h1>
+          <p className="text-slate-500 dark:text-slate-400">Manage promotional rules and discounts.</p>
+        </div>
+        <button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center">
+          <Plus className="w-4 h-4 mr-2" /> New Rule
+        </button>
+      </div>
+      
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Name</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Type</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Value</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            {state.discounts.map((d, i) => (
+              <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <td className="py-3 px-4 font-bold dark:text-white">{d.name}</td>
+                <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300">{d.type}</td>
+                <td className="py-3 px-4 text-sm font-semibold dark:text-slate-200">{d.value}</td>
+                <td className="py-3 px-4"><span className="px-2 py-1 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full">{d.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Create Discount Rule">
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Discount Name Code</label>
+            <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newDiscount.name} onChange={e=>setNewDiscount({...newDiscount, name: e.target.value})} placeholder="e.g. SUMMER20" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium dark:text-slate-300 mb-1">Type</label>
+              <select className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newDiscount.type} onChange={e=>setNewDiscount({...newDiscount, type: e.target.value})}>
+                <option>Percentage</option>
+                <option>Fixed Amount</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium dark:text-slate-300 mb-1">Value</label>
+              <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newDiscount.value} onChange={e=>setNewDiscount({...newDiscount, value: e.target.value})} placeholder="e.g. 20% or ₹500" />
+            </div>
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Discount</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+function AdminReportsView() {
+  const { state } = useContext(AppContext);
+  const totalRev = state.payments.reduce((sum, p) => sum + parseInt(p.amount.toString().replace(/\D/g,'') || 0), 0);
+  
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Reports & Analytics</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Total System Revenue</h3>
+          <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">₹{totalRev.toLocaleString()}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Calculated from {state.payments.length} transactions.</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Active Subscriptions</h3>
+          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{state.subscriptions.length}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Across all customers.</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Churn Rate</h3>
+          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">2.1%</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Healthy status. Below industry average.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminUsersView() {
+  const { state } = useContext(AppContext);
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">System Users</h1>
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">User</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Role</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            {state.users.map((u, i) => (
+              <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <td className="py-3 px-4">
+                  <p className="font-bold text-slate-900 dark:text-slate-200">{u.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{u.email}</p>
+                </td>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-1 text-xs font-bold rounded-full ${u.role === 'Admin' ? 'bg-purple-100 text-purple-700' : u.role==='Staff' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {u.role}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                STAFF VIEWS                                 */
+/* -------------------------------------------------------------------------- */
+
+function StaffCustomersView() {
+  const { state, addCustomer, removeCustomer } = useContext(AppContext);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [viewCustomer, setViewCustomer] = useState(null);
+  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', status: 'Active' });
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    addCustomer({ ...newCustomer, joined: new Date().toLocaleDateString('en-GB') });
+    setShowAddModal(false);
+    setNewCustomer({ name: '', email: '', status: 'Active' });
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Customers</h1>
+          <p className="text-slate-500 dark:text-slate-400">Manage client accounts and profiles.</p>
+        </div>
+        <button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center">
+          <Plus className="w-4 h-4 mr-2" /> Add Customer
+        </button>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">ID</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Customer Details</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Joined</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Status</th>
+              <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            {state.customers.map((c, i) => (
+              <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <td className="py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">{c.id}</td>
+                <td className="py-3 px-4">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-200">{c.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{c.email}</p>
+                </td>
+                <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{c.joined}</td>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${c.status === 'Active' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>{c.status}</span>
+                </td>
+                <td className="py-3 px-4 text-right text-sm space-x-3">
+                  <button onClick={() => setViewCustomer(c)} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">View</button>
+                  <button onClick={() => removeCustomer(c.id)} className="text-red-500 hover:text-red-700" title="Remove"><Trash2 className="w-4 h-4 inline"/></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Customer">
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Full Name</label>
+            <input required type="text" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newCustomer.name} onChange={e=>setNewCustomer({...newCustomer, name: e.target.value})} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium dark:text-slate-300 mb-1">Email</label>
+            <input required type="email" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={newCustomer.email} onChange={e=>setNewCustomer({...newCustomer, email: e.target.value})} />
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Customer</button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={!!viewCustomer} onClose={() => setViewCustomer(null)} title="Customer Profile">
+        {viewCustomer && (
+          <div className="space-y-4 text-sm text-slate-800 dark:text-slate-200">
+            <div className="flex items-center gap-4 mb-6 border-b dark:border-slate-700 pb-4">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xl font-bold">
+                {viewCustomer.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">{viewCustomer.name}</h3>
+                <p className="text-slate-500 dark:text-slate-400">{viewCustomer.email}</p>
+                <p className="text-xs text-slate-400 mt-1">ID: {viewCustomer.id} | Joined: {viewCustomer.joined}</p>
+              </div>
+            </div>
+            <div>
+               <h4 className="font-bold mb-2">Active Subscriptions</h4>
+               <p className="text-slate-500 dark:text-slate-400 italic">No subscriptions found for this user.</p>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              CUSTOMER VIEWS                                */
+/* -------------------------------------------------------------------------- */
+
+function CustomerDashboardView({ profile }) {
+  const { state, showToast, processPurchase } = useContext(AppContext);
+  const [selectedApp, setSelectedApp] = useState(null);
+  
+  const [paymentPortal, setPaymentPortal] = useState(null);
+  const [reminderModal, setReminderModal] = useState(null);
+  const [methodModal, setMethodModal] = useState(false);
+  const [managePlanModal, setManagePlanModal] = useState(null);
+  const [invoiceModal, setInvoiceModal] = useState(null);
+  const [reminderDays, setReminderDays] = useState('7');
+  const [newMethod, setNewMethod] = useState('UPI');
+
+  const recommendedApps = [
+    { name: 'Jio Hotstar Super', price: '₹899 / year', icon: Tv, color: 'text-blue-400' },
+    { name: 'Spotify Premium', price: '₹119 / month', icon: Headphones, color: 'text-emerald-400' },
+    { name: 'Apple One', price: '₹365 / month', icon: MonitorPlay, color: 'text-slate-200' },
+  ];
+
+  const activeSubs = state.subscriptions.filter(s => s.userEmail === profile.email);
+
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    processPurchase(paymentPortal, profile.email);
+    setPaymentPortal(null);
+    setSelectedApp(null);
+  };
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in duration-500">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome back, {profile.name.split(' ')[0]}</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your OTT & Software subscriptions in one place.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Your Active Plans</h2>
+          
+          {activeSubs.length === 0 ? (
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400 border border-dashed border-slate-200 dark:border-slate-700">
+               You do not have any active subscriptions.
+            </div>
+          ) : activeSubs.map((sub, idx) => (
+            <div key={idx} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
+                    <PlaySquare className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{sub.planName}</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">ID: {sub.id} • {sub.cycle} Cycle</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Next Billing Date</p>
+                  <p className="font-semibold text-slate-900 dark:text-slate-200 flex items-center"><Clock className="w-4 h-4 mr-1 text-slate-400"/> {sub.nextBilling}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Amount</p>
+                  <p className="font-semibold text-slate-900 dark:text-slate-200">₹{sub.price} / {sub.cycle.toLowerCase().replace('ly', '')}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button onClick={() => setManagePlanModal(sub)} className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">Manage Plan</button>
+                <button onClick={() => setInvoiceModal(sub)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center"><FileText className="w-4 h-4 mr-2"/> Details</button>
+              </div>
+            </div>
+          ))}
+
+        </div>
+
+        <div className="space-y-6">
+          {/* Payment Method */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center"><CreditCard className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400"/> Payment Method</h3>
+            <div className="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-700 rounded-lg mb-4 bg-slate-50 dark:bg-slate-900/50">
+              <div className="h-8 w-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded flex items-center justify-center text-xs font-bold text-blue-900 dark:text-blue-300">UPI</div>
+              <div>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">ravi.kumar@okhdfc</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Primary Method</p>
+              </div>
+            </div>
+            <button onClick={() => setMethodModal(true)} className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">Change method</button>
+          </div>
+
+          {/* Suggestions */}
+          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 dark:from-indigo-950 dark:to-slate-950 rounded-xl border border-slate-800 p-6 shadow-lg text-white">
+            <h3 className="font-bold mb-1 flex items-center text-indigo-200">Recommended for you</h3>
+            <p className="text-xs text-slate-400 mb-4">Enhance your entertainment.</p>
+            
+            <div className="space-y-4">
+              {recommendedApps.map((app, i) => (
+                <div key={i} className="flex items-center justify-between bg-white/10 p-3 rounded-lg border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <app.icon className={`w-8 h-8 ${app.color}`}/>
+                    <div>
+                      <p className="text-sm font-bold">{app.name}</p>
+                      <p className="text-xs text-slate-300">{app.price}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedApp(app)} className="bg-white text-slate-900 text-xs font-bold px-3 py-1.5 rounded hover:bg-slate-200">Add</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recommended App Action Modal */}
+      <Modal isOpen={!!selectedApp} onClose={() => setSelectedApp(null)} title={`Add ${selectedApp?.name}`}>
+        {selectedApp && (
+          <div className="space-y-6 text-slate-800 dark:text-slate-200">
+             <div className="text-center">
+               <selectedApp.icon className={`w-16 h-16 mx-auto mb-4 ${selectedApp.color}`}/>
+               <p className="text-lg font-bold">Subscribe to {selectedApp.name}</p>
+               <p className="text-slate-500 dark:text-slate-400">Amount: {selectedApp.price}</p>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setPaymentPortal(selectedApp)} className="bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">Pay Now</button>
+                <button onClick={() => setReminderModal(selectedApp)} className="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white py-3 rounded-lg font-bold hover:bg-slate-300 dark:hover:bg-slate-600">Remind Me Later</button>
+             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Payment Portal Modal */}
+      <Modal isOpen={!!paymentPortal} onClose={() => setPaymentPortal(null)} title="Secure Payment Gateway">
+         {paymentPortal && (
+            <form onSubmit={handlePaymentSubmit} className="space-y-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-center mb-4">
+                 <p className="text-sm text-blue-800 dark:text-blue-200">Total Payable Amount</p>
+                 <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{paymentPortal.price}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium dark:text-slate-300 mb-1">Card Number (Simulated)</label>
+                <input required type="text" defaultValue="4111 1111 1111 1111" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium dark:text-slate-300 mb-1">Expiry</label>
+                   <input required type="text" defaultValue="12/28" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium dark:text-slate-300 mb-1">CVV</label>
+                   <input required type="password" defaultValue="123" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+                 </div>
+              </div>
+              <button type="submit" className="w-full bg-emerald-600 text-white p-3 rounded font-bold hover:bg-emerald-700 transition-colors mt-2">Confirm Payment</button>
+            </form>
+         )}
+      </Modal>
+
+      {/* Reminder Modal */}
+      <Modal isOpen={!!reminderModal} onClose={() => setReminderModal(null)} title="Set Reminder">
+         {reminderModal && (
+            <div className="space-y-4">
+              <p className="dark:text-slate-300">When should we remind you to subscribe to {reminderModal.name}?</p>
+              <select value={reminderDays} onChange={(e) => setReminderDays(e.target.value)} className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="1">Tomorrow</option>
+                <option value="3">In 3 days</option>
+                <option value="7">In 1 week</option>
+                <option value="30">Next Month</option>
+              </select>
+              <button onClick={() => {showToast(`Reminder set for ${reminderDays} days from now.`); setReminderModal(null); setSelectedApp(null);}} className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Reminder</button>
+            </div>
+         )}
+      </Modal>
+
+      {/* Method Modal */}
+      <Modal isOpen={methodModal} onClose={() => setMethodModal(false)} title="Change Payment Method">
+         <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium dark:text-slate-300 mb-1">Select New Method</label>
+              <select value={newMethod} onChange={(e) => setNewMethod(e.target.value)} className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="UPI">UPI</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Net Banking">Net Banking</option>
+              </select>
+            </div>
+            <button onClick={() => {showToast(`Payment method updated to ${newMethod}`); setMethodModal(false);}} className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Update Method</button>
+         </div>
+      </Modal>
+
+      {/* Manage Plan Modal */}
+      <Modal isOpen={!!managePlanModal} onClose={() => setManagePlanModal(null)} title="Manage Plan">
+         {managePlanModal && (
+           <div className="space-y-4 text-slate-800 dark:text-slate-200">
+              <div className="flex justify-between items-center p-3 border rounded-lg dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                 <div>
+                   <p className="font-bold">Auto-Pay (Recurring)</p>
+                   <p className="text-xs text-slate-500">Automatically charge my card on {managePlanModal.nextBilling}</p>
+                 </div>
+                 <input type="checkbox" defaultChecked className="w-5 h-5 accent-blue-600" />
+              </div>
+              <button onClick={() => {showToast('Plan preferences saved.'); setManagePlanModal(null);}} className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Save Changes</button>
+              <button onClick={() => {showToast('Request sent to cancel subscription.', 'error'); setManagePlanModal(null);}} className="w-full text-red-600 border border-red-200 dark:border-red-900/50 p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20">Cancel Subscription</button>
+           </div>
+         )}
+      </Modal>
+
+      {/* Invoice Modal */}
+      <Modal isOpen={!!invoiceModal} onClose={() => setInvoiceModal(null)} title="Subscription Details">
+         {invoiceModal && (
+           <div className="space-y-4 text-slate-800 dark:text-slate-200 text-sm">
+              <div className="p-4 border dark:border-slate-700 rounded-lg space-y-2 bg-slate-50 dark:bg-slate-800">
+                <p className="flex justify-between"><span>Plan Name:</span> <span className="font-bold">{invoiceModal.planName}</span></p>
+                <p className="flex justify-between"><span>Subscription ID:</span> <span className="font-medium">{invoiceModal.id}</span></p>
+                <p className="flex justify-between"><span>Purchased On:</span> <span className="font-medium">{invoiceModal.purchasedAt}</span></p>
+                <p className="flex justify-between"><span>Next Renewal/Expiry:</span> <span className="font-medium">{invoiceModal.nextBilling}</span></p>
+                <p className="flex justify-between"><span>Amount Paid:</span> <span className="font-medium font-mono">₹{invoiceModal.price}</span></p>
+                <p className="flex justify-between"><span>Payment Method:</span> <span className="font-medium">{invoiceModal.method}</span></p>
+              </div>
+              <button onClick={() => {showToast('PDF Downloaded'); setInvoiceModal(null);}} className="w-full bg-slate-200 dark:bg-slate-700 p-2 rounded font-bold hover:bg-slate-300 dark:hover:bg-slate-600">Download PDF Receipt</button>
+           </div>
+         )}
+      </Modal>
+
+    </div>
+  );
+}
+
+function CustomerSubscriptionsView() {
+  const { state, searchQuery } = useContext(AppContext);
+  
+  const filteredSubs = state.subscriptions.filter(s => {
+    const isCustomer = s.userEmail === 'customer@brightloop.in';
+    const matchesSearch = s.planName.toLowerCase().includes(searchQuery.toLowerCase());
+    return isCustomer && matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto">
+       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">All Subscriptions</h1>
+       <p className="text-slate-500 dark:text-slate-400">View your active, paused, and past subscriptions.</p>
+       
+       {filteredSubs.length === 0 ? (
+         <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider">
+           No such subscription found
+         </div>
+       ) : (
+         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Plan</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Status</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Amount</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Next Billing</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {filteredSubs.map((sub, i) => (
+                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <td className="py-4 px-4">
+                    <p className="font-bold text-slate-900 dark:text-slate-200">{sub.planName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{sub.cycle}</p>
+                  </td>
+                  <td className="py-4 px-4"><span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">{sub.status}</span></td>
+                  <td className="py-4 px-4 text-sm font-semibold dark:text-slate-200">₹{sub.price}</td>
+                  <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{sub.nextBilling}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+         </div>
+       )}
+    </div>
+  );
+}
+
+function CustomerPaymentsView() {
+  const { state, showToast, searchQuery } = useContext(AppContext);
+  
+  const filteredPayments = state.payments.filter(p => {
+    const isCustomer = p.userEmail === 'customer@brightloop.in';
+    const matchesSearch = p.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    return isCustomer && matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto">
+       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Payment History</h1>
+       
+       {filteredPayments.length === 0 ? (
+         <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider">
+           No matching payments found
+         </div>
+       ) : (
+         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Description</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Amount</th>
+                <th className="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Receipt</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {filteredPayments.map((h, i) => (
+                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{h.date}</td>
+                  <td className="py-4 px-4">
+                    <p className="font-bold text-slate-900 dark:text-slate-200 text-sm">{h.desc}</p>
+                    <p className="text-xs text-slate-400">{h.id}</p>
+                  </td>
+                  <td className="py-4 px-4 text-sm font-semibold text-emerald-700 dark:text-emerald-400">{h.amount}</td>
+                  <td className="py-4 px-4"><button onClick={() => showToast('PDF Generating... Download started.')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Download PDF</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+         </div>
+       )}
+    </div>
+  );
+}
+
+function CustomerSupportView() {
+  const { showToast } = useContext(AppContext);
+  const [msg, setMsg] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if(msg.trim().length === 0) return;
+    showToast('Your message has been sent to our support team!');
+    setMsg(''); // clear form
+  };
+
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Staff Support</h1>
+      
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Topic</label>
+            <select className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-900 dark:text-white">
+              <option>Billing Issue</option>
+              <option>Cancel Subscription</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Message</label>
+            <textarea value={msg} onChange={e=>setMsg(e.target.value)} required rows="5" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none resize-none bg-white dark:bg-slate-900 dark:text-white" placeholder="Explain your issue here..."></textarea>
+          </div>
+          <button type="submit" className="bg-blue-600 text-white font-medium px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Submit Ticket</button>
+        </form>
+      </div>
+    </div>
+  );
+}
